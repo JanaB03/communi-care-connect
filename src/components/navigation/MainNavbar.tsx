@@ -2,7 +2,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/contexts/UserContext";
-import { BookOpen, MapPin, MessageCircle, LogOut } from "lucide-react";
+import { BookOpen, MapPin, MessageCircle, LogOut, Settings } from "lucide-react";
 
 const MainNavbar = () => {
   const { user, logout } = useUser();
@@ -32,6 +32,10 @@ const MainNavbar = () => {
           <Link to="/chat" className="flex items-center gap-2 hover:text-gold transition-colors">
             <MessageCircle size={20} />
             <span>Chat</span>
+          </Link>
+          <Link to="/settings" className="flex items-center gap-2 hover:text-gold transition-colors">
+            <Settings size={20} />
+            <span>Settings</span>
           </Link>
           <div className="flex items-center gap-2">
             {user?.avatar && (

@@ -1,7 +1,7 @@
 
 import { Link, useLocation } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
-import { Home, MessageCircle, Calendar, Settings } from "lucide-react";
+import { Home, MessageCircle, Calendar, Settings, Map, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const MobileNavbar = () => {
@@ -38,11 +38,14 @@ const MobileNavbar = () => {
           <span className="text-xs mt-1">Chat</span>
         </Link>
         <Link 
-          to={`/${user?.role === "client" ? "client" : "staff"}#appointments`}
-          className="flex flex-col items-center justify-center p-2 rounded-md text-gray-500"
+          to="/map" 
+          className={cn(
+            "flex flex-col items-center justify-center p-2 rounded-md transition-colors",
+            isActive("/map") ? "text-orange" : "text-gray-500"
+          )}
         >
-          <Calendar size={24} />
-          <span className="text-xs mt-1">Appointments</span>
+          <Map size={24} />
+          <span className="text-xs mt-1">Map</span>
         </Link>
         <Link 
           to="/resources" 
@@ -51,8 +54,18 @@ const MobileNavbar = () => {
             isActive("/resources") ? "text-orange" : "text-gray-500"
           )}
         >
-          <Settings size={24} />
+          <BookOpen size={24} />
           <span className="text-xs mt-1">Resources</span>
+        </Link>
+        <Link 
+          to="/settings" 
+          className={cn(
+            "flex flex-col items-center justify-center p-2 rounded-md transition-colors",
+            isActive("/settings") ? "text-orange" : "text-gray-500"
+          )}
+        >
+          <Settings size={24} />
+          <span className="text-xs mt-1">Settings</span>
         </Link>
       </div>
     </div>

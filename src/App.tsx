@@ -14,6 +14,7 @@ import Chat from "./pages/Chat";
 import Login from "./pages/Login";
 import Resources from "./pages/Resources";
 import Map from "./pages/Map";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import AuthLayout from "./layouts/AuthLayout";
 
@@ -36,6 +37,7 @@ const App = () => (
                 <Route path="/chat" element={<Chat />} />
                 <Route path="/resources" element={<Resources />} />
                 <Route path="/map" element={<Map />} />
+                <Route path="/settings" element={<Settings />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
