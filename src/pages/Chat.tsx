@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUser } from "@/contexts/UserContext";
@@ -17,6 +16,7 @@ import {
   ChevronLeft,
   Edit,
   Image as ImageIcon,
+  MessageCircle,
   Mic,
   MoreVertical,
   Send,
