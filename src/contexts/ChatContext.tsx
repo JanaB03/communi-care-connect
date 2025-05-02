@@ -48,38 +48,9 @@ export const useChat = () => {
   return context;
 };
 
-// Simulated mock data
-const mockThreads: ChatThread[] = [
-  {
-    id: "thread-1",
-    participantName: "Jessie Smith",
-    participantId: "client-123",
-    participantRole: "client",
-    lastMessageTime: new Date(),
-    unreadCount: 2,
-    avatar: "/avatar-client.png"
-  },
-  {
-    id: "thread-2",
-    participantName: "Case Manager Alex",
-    participantId: "staff-456",
-    participantRole: "staff",
-    lastMessageTime: new Date(Date.now() - 3600000),
-    unreadCount: 0,
-    avatar: "/avatar-staff.png"
-  },
-  {
-    id: "thread-3",
-    participantName: "Housing Specialist Jordan",
-    participantId: "staff-789",
-    participantRole: "staff",
-    lastMessageTime: new Date(Date.now() - 86400000),
-    unreadCount: 0,
-    avatar: "/avatar-staff-2.png"
-  }
-];
-
-const mockMessages: Record<string, Message[]> = {
+// Shared mock data store to simulate real-time database
+// This will be used across different user sessions
+const globalMockMessages: Record<string, Message[]> = {
   "thread-1": [
     {
       id: "msg-1",
@@ -144,6 +115,40 @@ const mockMessages: Record<string, Message[]> = {
   ]
 };
 
+// Thread data
+const mockThreads: ChatThread[] = [
+  {
+    id: "thread-1",
+    participantName: "Jessie Smith",
+    participantId: "client-123",
+    participantRole: "client",
+    lastMessageTime: new Date(),
+    unreadCount: 2,
+    avatar: "/avatar-client.png"
+  },
+  {
+    id: "thread-2",
+    participantName: "Case Manager Alex",
+    participantId: "staff-456",
+    participantRole: "staff",
+    lastMessageTime: new Date(Date.now() - 3600000),
+    unreadCount: 0,
+    avatar: "/avatar-staff.png"
+  },
+  {
+    id: "thread-3",
+    participantName: "Housing Specialist Jordan",
+    participantId: "staff-789",
+    participantRole: "staff",
+    lastMessageTime: new Date(Date.now() - 86400000),
+    unreadCount: 0,
+    avatar: "/avatar-staff-2.png"
+  }
+];
+
+// Set up a real-time update interval in milliseconds
+const REAL_TIME_UPDATE_INTERVAL = 2000;
+
 export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
   const { user } = useUser();
   const [threads, setThreads] = useState<ChatThread[]>(mockThreads);
@@ -151,24 +156,32 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [loadingMessages, setLoadingMessages] = useState<boolean>(false);
 
-  // Load messages when active thread changes
+  // Simulated real-time message syncing
   useEffect(() => {
     if (!activeThreadId) return;
-
+    
+    // Initial load of messages
     const loadMessages = async () => {
       setLoadingMessages(true);
       try {
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 500));
-        setMessages(mockMessages[activeThreadId] || []);
+        setMessages(globalMockMessages[activeThreadId] || []);
       } catch (error) {
         console.error("Error loading messages", error);
       } finally {
         setLoadingMessages(false);
       }
     };
-
+    
     loadMessages();
+    
+    // Set up polling for real-time updates
+    const intervalId = setInterval(() => {
+      setMessages([...globalMockMessages[activeThreadId] || []]);
+    }, REAL_TIME_UPDATE_INTERVAL);
+    
+    return () => clearInterval(intervalId);
   }, [activeThreadId]);
 
   // Send a new message
@@ -187,6 +200,12 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
       location
     };
 
+    // Update global mock data store (simulates database update)
+    if (!globalMockMessages[activeThreadId]) {
+      globalMockMessages[activeThreadId] = [];
+    }
+    globalMockMessages[activeThreadId] = [...globalMockMessages[activeThreadId], newMessage];
+
     // Update messages state
     setMessages(prev => [...prev, newMessage]);
 
@@ -199,11 +218,7 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
       )
     );
 
-    // In a real app, send to backend/API here
     console.log("Message sent:", newMessage);
-    
-    // Add to mock data for persistence during session
-    mockMessages[activeThreadId] = [...(mockMessages[activeThreadId] || []), newMessage];
   };
 
   // Edit a message
@@ -212,6 +227,15 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     
     // Only client users can edit messages
     if (user.role !== "client") return;
+    
+    // Update global mock data store (simulates database update)
+    if (globalMockMessages[activeThreadId]) {
+      globalMockMessages[activeThreadId] = globalMockMessages[activeThreadId].map(msg => 
+        msg.id === id && msg.sender === user.id 
+          ? { ...msg, content, isEdited: true }
+          : msg
+      );
+    }
     
     // Update messages state
     setMessages(prev => 
@@ -222,17 +246,7 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
       )
     );
     
-    // In a real app, update backend/API here
     console.log("Message edited:", id, content);
-    
-    // Update mock data
-    if (mockMessages[activeThreadId]) {
-      mockMessages[activeThreadId] = mockMessages[activeThreadId].map(msg => 
-        msg.id === id && msg.sender === user.id 
-          ? { ...msg, content, isEdited: true }
-          : msg
-      );
-    }
   };
 
   // Delete a message
@@ -242,18 +256,17 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     // Only client users can delete messages
     if (user.role !== "client") return;
     
-    // Update messages state
-    setMessages(prev => prev.filter(msg => !(msg.id === id && msg.sender === user.id)));
-    
-    // In a real app, update backend/API here
-    console.log("Message deleted:", id);
-    
-    // Update mock data
-    if (mockMessages[activeThreadId]) {
-      mockMessages[activeThreadId] = mockMessages[activeThreadId].filter(
+    // Update global mock data store (simulates database update)
+    if (globalMockMessages[activeThreadId]) {
+      globalMockMessages[activeThreadId] = globalMockMessages[activeThreadId].filter(
         msg => !(msg.id === id && msg.sender === user.id)
       );
     }
+    
+    // Update messages state
+    setMessages(prev => prev.filter(msg => !(msg.id === id && msg.sender === user.id)));
+    
+    console.log("Message deleted:", id);
   };
 
   return (
