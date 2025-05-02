@@ -1,26 +1,48 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { UserProvider } from "./contexts/UserContext";
+import { ChatProvider } from "./contexts/ChatContext";
+
 import Index from "./pages/Index";
+import ClientDashboard from "./pages/ClientDashboard";
+import StaffDashboard from "./pages/StaffDashboard";
+import Chat from "./pages/Chat";
+import Login from "./pages/Login";
+import Resources from "./pages/Resources";
+import Map from "./pages/Map";
 import NotFound from "./pages/NotFound";
+import AuthLayout from "./layouts/AuthLayout";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <UserProvider>
+      <ChatProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/login" element={<Login />} />
+              <Route element={<AuthLayout />}>
+                <Route path="/client" element={<ClientDashboard />} />
+                <Route path="/staff" element={<StaffDashboard />} />
+                <Route path="/chat" element={<Chat />} />
+                <Route path="/resources" element={<Resources />} />
+                <Route path="/map" element={<Map />} />
+              </Route>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </ChatProvider>
+    </UserProvider>
   </QueryClientProvider>
 );
 
