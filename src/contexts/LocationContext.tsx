@@ -1,3 +1,4 @@
+// Fixed LocationContext - Replace src/contexts/LocationContext.tsx
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useUser } from "./UserContext";
@@ -33,7 +34,6 @@ export const useLocation = () => {
 };
 
 export const LocationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useUser();
   const [pins, setPins] = useState<LocationPin[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPinId, setSelectedPinId] = useState<string | null>(null);

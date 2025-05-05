@@ -1,17 +1,21 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { useLocation } from "@/contexts/LocationContext";
-import { MapPin } from "lucide-react";
+import { MapPin, Loader } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useUser } from "@/contexts/UserContext";
 
 interface MapViewProps {
   height?: string;
   onPinClick?: (pinId: string) => void;
   allowPinDrop?: boolean;
 }
+
+// For demo purposes - using a public token
+// In production, you should use environment variables
+const MAPBOX_TOKEN = "pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4M29iazA2Z2gycXA4N2pmbDZmangifQ.-g_vE53SD2WrJ6tFX7QHmA";
 
 const MapView: React.FC<MapViewProps> = ({ 
   height = "500px", 
@@ -21,57 +25,78 @@ const MapView: React.FC<MapViewProps> = ({
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const { pins, addPin, selectedPinId, setSelectedPinId } = useLocation();
-  const [mapboxToken, setMapboxToken] = useState<string | null>(localStorage.getItem("mapbox-token"));
+  const [isLoading, setIsLoading] = useState(true);
   const [markers, setMarkers] = useState<{[key: string]: mapboxgl.Marker}>({});
   const { toast } = useToast();
+  const { user } = useUser();
   
   // Initialize map
   useEffect(() => {
-    if (!mapContainer.current || !mapboxToken) return;
+    if (!mapContainer.current) return;
 
-    mapboxgl.accessToken = mapboxToken;
+    // Use the token from the constant or environment variable
+    mapboxgl.accessToken = MAPBOX_TOKEN;
     
     const newMap = new mapboxgl.Map({
       container: mapContainer.current,
       style: "mapbox://styles/mapbox/light-v11",
       center: [-122.3321, 47.6062], // Default: Seattle
       zoom: 12,
+      attributionControl: false
     });
 
+    // Add map controls
     newMap.addControl(new mapboxgl.NavigationControl(), "top-right");
+    newMap.addControl(new mapboxgl.GeolocateControl({
+      positionOptions: {
+        enableHighAccuracy: true
+      },
+      trackUserLocation: true
+    }));
     
-    if (allowPinDrop) {
-      // Allow pin dropping on click for client view
-      newMap.on("click", (e) => {
-        if (!allowPinDrop) return;
-        
-        toast({
-          title: "Location Selected",
-          description: `Latitude: ${e.lngLat.lat.toFixed(4)}, Longitude: ${e.lngLat.lng.toFixed(4)}`,
+    // Wait for map to load
+    newMap.on('load', () => {
+      setIsLoading(false);
+      
+      // Add click handler for pin dropping
+      if (allowPinDrop && user?.role === "client") {
+        newMap.on("click", (e) => {
+          // Get coordinates
+          const lat = e.lngLat.lat;
+          const lng = e.lngLat.lng;
+          
+          // Perform reverse geocoding (in a real app)
+          // For demo, randomly select from realistic locations
+          const locations = ["Imperial Street", "Day Center", "Central Library", "Old Town Station"];
+          const mockAddress = locations[Math.floor(Math.random() * locations.length)];
+          
+          // Add the pin
+          addPin({
+            userId: user.id,
+            userName: user.name,
+            latitude: lat,
+            longitude: lng,
+            address: mockAddress
+          });
+          
+          toast({
+            title: "Location Shared",
+            description: `Pin dropped at ${mockAddress}`,
+          });
         });
-        
-        // Get current user information and add a new pin
-        // In a real implementation, you would use the actual user data
-        addPin({
-          userId: "client-123", // This would be the actual user ID
-          userName: "Jessie Smith", // This would be the actual user name
-          latitude: e.lngLat.lat,
-          longitude: e.lngLat.lng,
-          address: "Custom location" // In a real app, you would reverse geocode to get the address
-        });
-      });
-    }
+      }
+    });
 
     map.current = newMap;
 
     return () => {
       newMap.remove();
     };
-  }, [mapboxToken, allowPinDrop, addPin, toast]);
+  }, [user, allowPinDrop, addPin, toast]);
 
   // Update markers when pins change
   useEffect(() => {
-    if (!map.current) return;
+    if (!map.current || isLoading) return;
     
     // Clear existing markers
     Object.values(markers).forEach(marker => marker.remove());
@@ -81,7 +106,7 @@ const MapView: React.FC<MapViewProps> = ({
     pins.forEach(pin => {
       // Create a custom marker element
       const el = document.createElement("div");
-      el.className = "flex flex-col items-center";
+      el.className = "relative flex flex-col items-center";
       
       const markerPin = document.createElement("div");
       markerPin.className = `w-8 h-8 rounded-full ${pin.id === selectedPinId ? "bg-orange" : "bg-purple"} 
@@ -93,17 +118,17 @@ const MapView: React.FC<MapViewProps> = ({
       
       el.appendChild(markerPin);
 
-      // Add a tooltip that shows on hover
+      // Add a tooltip
       const tooltip = document.createElement("div");
-      tooltip.className = "absolute bottom-full mb-2 bg-white px-2 py-1 rounded shadow-md text-xs whitespace-nowrap opacity-0 transition-opacity duration-200";
-      tooltip.innerText = `${pin.userName} • ${pin.timestamp.toLocaleTimeString()}`;
+      tooltip.className = "absolute bottom-full mb-2 bg-white px-2 py-1 rounded shadow-md text-xs whitespace-nowrap opacity-0 transition-opacity duration-200 z-20";
+      tooltip.innerText = `${pin.userName}${pin.address ? ` • ${pin.address}` : ''}`;
       
       markerPin.addEventListener("mouseenter", () => {
-        tooltip.classList.replace("opacity-0", "opacity-100");
+        tooltip.style.opacity = "1";
       });
       
       markerPin.addEventListener("mouseleave", () => {
-        tooltip.classList.replace("opacity-100", "opacity-0");
+        tooltip.style.opacity = "0";
       });
       
       el.appendChild(tooltip);
@@ -117,6 +142,13 @@ const MapView: React.FC<MapViewProps> = ({
       markerPin.addEventListener("click", () => {
         setSelectedPinId(pin.id);
         if (onPinClick) onPinClick(pin.id);
+        
+        // Fly to the pin
+        map.current?.flyTo({
+          center: [pin.longitude, pin.latitude],
+          zoom: 14,
+          duration: 1000
+        });
       });
       
       newMarkers[pin.id] = marker;
@@ -138,53 +170,40 @@ const MapView: React.FC<MapViewProps> = ({
       
       map.current.fitBounds(bounds, {
         padding: 50,
-        maxZoom: 15
+        maxZoom: 15,
+        duration: 1000
       });
     } else if (pins.length === 1 && map.current) {
       map.current.flyTo({
         center: [pins[0].longitude, pins[0].latitude],
-        zoom: 14
+        zoom: 14,
+        duration: 1000
       });
     }
-  }, [pins, map.current, selectedPinId, setSelectedPinId, onPinClick]);
-
-  // Handle token input if not available
-  if (!mapboxToken) {
-    return (
-      <div className="border rounded-lg p-6 bg-gray-50">
-        <h3 className="text-lg font-medium mb-4">Map API Token Required</h3>
-        <p className="mb-4 text-gray-600">
-          Please provide a Mapbox public token to enable the map feature.
-        </p>
-        <form onSubmit={(e) => {
-          e.preventDefault();
-          const input = e.currentTarget.elements.namedItem('token') as HTMLInputElement;
-          const token = input.value.trim();
-          if (token) {
-            localStorage.setItem("mapbox-token", token);
-            setMapboxToken(token);
-          }
-        }}>
-          <div className="flex flex-col space-y-2">
-            <input 
-              name="token"
-              type="text" 
-              placeholder="Enter your Mapbox public token" 
-              className="px-3 py-2 border rounded"
-            />
-            <div className="text-xs text-gray-500 mb-2">
-              Get your free token at <a href="https://mapbox.com/" target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">mapbox.com</a>
-            </div>
-            <Button type="submit">Save Token</Button>
-          </div>
-        </form>
-      </div>
-    );
-  }
+  }, [pins, map.current, selectedPinId, setSelectedPinId, onPinClick, isLoading]);
 
   return (
     <div style={{ height, position: 'relative' }} className="rounded-lg overflow-hidden shadow-md">
       <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
+      
+      {/* Loading overlay */}
+      {isLoading && (
+        <div className="absolute inset-0 bg-gray-100 bg-opacity-75 flex items-center justify-center">
+          <div className="flex flex-col items-center">
+            <Loader className="animate-spin h-8 w-8 text-purple mb-2" />
+            <p className="text-navy font-medium">Loading map...</p>
+          </div>
+        </div>
+      )}
+      
+      {/* Pin drop instructions */}
+      {allowPinDrop && user?.role === "client" && !isLoading && (
+        <div className="absolute bottom-4 left-0 right-0 flex justify-center">
+          <div className="bg-white p-2 rounded-md shadow-md text-sm max-w-xs text-center">
+            <p className="font-medium text-navy">Click anywhere on the map to drop a pin</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

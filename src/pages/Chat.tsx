@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUser } from "@/contexts/UserContext";
@@ -20,7 +19,8 @@ const Chat = () => {
     sendMessage,
     editMessage,
     deleteMessage,
-    loadingMessages
+    loadingMessages,
+    markThreadAsRead
   } = useChat();
   const [showThreads, setShowThreads] = useState(true);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
@@ -36,9 +36,18 @@ const Chat = () => {
     if (isMobile && activeThreadId) {
       setShowThreads(false);
     }
-  }, [activeThreadId, isMobile]);
+    
+    // Mark thread as read when selected
+    if (activeThreadId) {
+      markThreadAsRead(activeThreadId);
+    }
+  }, [activeThreadId, isMobile, markThreadAsRead]);
 
-  const handleSendMessage = (content: string) => {
+  const handleSendMessage = (
+    content: string, 
+    attachmentType?: "image" | "location" | "document", 
+    attachmentData?: any
+  ) => {
     if (editingMessageId) {
       // Handle editing mode
       if (content.trim()) {
@@ -49,7 +58,7 @@ const Chat = () => {
     } else {
       // Handle sending new message
       if (content.trim() && activeThreadId) {
-        sendMessage(content);
+        sendMessage(content, attachmentType, attachmentData);
       }
     }
   };
@@ -80,7 +89,7 @@ const Chat = () => {
       <div className="flex flex-1 overflow-hidden">
         {/* Thread List - Hidden on mobile when a thread is active */}
         {(!isMobile || showThreads) && (
-          <div className={`${isMobile ? 'w-full' : 'w-1/3 border-r'} bg-white`}>
+          <div className={`${isMobile ? 'w-full' : 'w-1/3 border-r'} bg-white flex flex-col`}>
             <ThreadList 
               threads={threads} 
               activeThreadId={activeThreadId}
@@ -104,24 +113,34 @@ const Chat = () => {
                   <ChevronLeft />
                 </Button>
               )}
-              {activeThreadId ? (
-                <>
-                  <Avatar className="h-10 w-10 mr-3">
-                    <AvatarImage 
-                      src={currentThread?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentThread?.participantName || '')}&background=random`} 
-                      alt={currentThread?.participantName} 
-                    />
-                    <AvatarFallback>
-                      {currentThread?.participantName.charAt(0) || '?'}
-                    </AvatarFallback>
-                  </Avatar>
+              {activeThreadId && currentThread ? (
+                <div className="flex items-center flex-1">
+                  <div className="relative">
+                    <Avatar className="h-10 w-10 mr-3">
+                      <AvatarImage 
+                        src={currentThread.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentThread.participantName)}&background=random`} 
+                        alt={currentThread.participantName} 
+                      />
+                      <AvatarFallback>
+                        {currentThread.participantName.charAt(0) || '?'}
+                      </AvatarFallback>
+                    </Avatar>
+                    {currentThread.status && (
+                      <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${
+                        currentThread.status === 'online' ? 'bg-green-500' :
+                        currentThread.status === 'away' ? 'bg-yellow-500' : 'bg-gray-400'
+                      }`}></span>
+                    )}
+                  </div>
                   <div>
-                    <h2 className="font-bold">{currentThread?.participantName}</h2>
+                    <h2 className="font-bold">{currentThread.participantName}</h2>
                     <p className="text-sm text-gray-500">
-                      {currentThread?.participantRole === "client" ? "Client" : "Staff"}
+                      {currentThread.status === 'online' ? 'Online' : 
+                       currentThread.status === 'away' ? 'Away' : 'Offline'} • 
+                      {currentThread.participantRole === "client" ? " Client" : " Staff"}
                     </p>
                   </div>
-                </>
+                </div>
               ) : (
                 <h2 className="font-bold">Select a conversation</h2>
               )}
@@ -130,6 +149,7 @@ const Chat = () => {
             {/* Messages */}
             <MessageList 
               messages={messages}
+              threads={threads} // Pass threads prop
               activeThreadId={activeThreadId}
               loadingMessages={loadingMessages}
               onEditMessage={handleEditMessage}

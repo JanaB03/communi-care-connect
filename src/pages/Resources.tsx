@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,13 +28,13 @@ const Resources = () => {
   // Resource cards for the bottom section
   const resourceCards = [
     {
-      name: "Emergency Shelter",
-      description: "Same-day shelter options throughout the city",
+      name: "Day Center",
+      description: "Drop-in center with showers, meals, and case management",
       tags: ["No Wait List", "Same Day"],
     },
     {
-      name: "Transitional Housing",
-      description: "90-day housing programs with case management",
+      name: "Imperial Street Shelter",
+      description: "90-day housing program with on-site support services",
       tags: ["Application Required"],
     },
     {
@@ -44,19 +43,19 @@ const Resources = () => {
       tags: ["Application Required", "Case Manager Referral"],
     },
     {
-      name: "Rental Assistance",
-      description: "Financial assistance for rent and utilities",
-      tags: ["Application Required"],
-    },
-    {
-      name: "Housing Navigation",
-      description: "One-on-one support to find housing",
+      name: "Central Library Resources",
+      description: "Computer access, job search assistance, and resource navigation",
       tags: ["Walk-in Welcome"],
     },
     {
-      name: "Mobile Health Clinic",
-      description: "Free healthcare services at various locations",
+      name: "Old Town Station Mobile Clinic",
+      description: "Free healthcare services available Tuesday and Thursday",
       tags: ["No Insurance Required", "Walk-in Welcome"],
+    },
+    {
+      name: "Community Food Bank",
+      description: "Weekly food distribution at multiple locations",
+      tags: ["No ID Required", "Walk-in Welcome"],
     },
   ];
   
@@ -72,7 +71,7 @@ const Resources = () => {
   
   // Location filters for the left sidebar
   const locationFilters = [
-    "Father Joe's Villages",
+    "Imperial Street",
     "Near my location"
   ];
 
@@ -143,6 +142,14 @@ const Resources = () => {
                 <div className="h-24 bg-navy/10"></div>
                 <div className="p-4">
                   <h3 className="font-semibold text-navy">{resource.name}</h3>
+                  <p className="text-sm text-gray-600 mt-1">{resource.description}</p>
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {resource.tags.map((tag, i) => (
+                      <span key={i} className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
             ))}

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -43,19 +42,19 @@ const StaffDashboard = () => {
     { 
       id: "checkin-1",
       name: "Jessie Smith", 
-      location: "Downtown Center",
+      location: "Day Center",
       time: new Date(Date.now() - 1800000) // 30 minutes ago
     },
     { 
       id: "checkin-2",
       name: "Taylor Johnson", 
-      location: "Mobile Outreach",
+      location: "Old Town Station",
       time: new Date(Date.now() - 7200000) // 2 hours ago
     },
     { 
       id: "checkin-3",
       name: "Casey Brown", 
-      location: "East Side Shelter",
+      location: "Imperial Street Shelter",
       time: new Date(Date.now() - 10800000) // 3 hours ago
     }
   ];
@@ -65,14 +64,14 @@ const StaffDashboard = () => {
     {
       id: "loc-1",
       name: "Jessie Smith", 
-      location: "Downtown Library",
+      location: "Central Library",
       coordinates: "47.6062° N, 122.3321° W",
       updatedAt: new Date(Date.now() - 900000) // 15 minutes ago
     },
     {
       id: "loc-2",
       name: "Taylor Johnson", 
-      location: "City Park", 
+      location: "Old Town Station", 
       coordinates: "47.6101° N, 122.3420° W",
       updatedAt: new Date(Date.now() - 3600000) // 1 hour ago
     }
@@ -286,7 +285,7 @@ const StaffDashboard = () => {
                         <AvatarFallback>{thread.participantName.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-medium">{thread.participantName}</p>
+                      <p className="font-medium">{thread.participantName}</p>
                         <p className="text-sm text-gray-500">
                           Last message at {formatTime(thread.lastMessageTime)}
                         </p>
@@ -369,7 +368,7 @@ const StaffDashboard = () => {
                   <h3 className="font-medium text-navy">Team Meeting</h3>
                   <span className="text-sm text-gray-500">9:30 AM - 10:30 AM</span>
                 </div>
-                <p className="text-sm text-gray-600">Conference Room B</p>
+                <p className="text-sm text-gray-600">Central Library, Conference Room</p>
               </div>
             </div>
             
@@ -382,7 +381,7 @@ const StaffDashboard = () => {
                   <h3 className="font-medium text-navy">Client Session - Jessie Smith</h3>
                   <span className="text-sm text-gray-500">2:00 PM - 3:00 PM</span>
                 </div>
-                <p className="text-sm text-gray-600">Office 3</p>
+                <p className="text-sm text-gray-600">Day Center, Office 3</p>
               </div>
             </div>
           </div>

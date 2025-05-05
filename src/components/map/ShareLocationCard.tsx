@@ -1,3 +1,4 @@
+// Fixed ShareLocationCard that safely uses useUser
 
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,6 +16,7 @@ const ShareLocationCard: React.FC = () => {
   const [isSharing, setIsSharing] = React.useState(false);
 
   const handleShareLocation = async () => {
+    // Check if user exists before proceeding
     if (!user) {
       toast({
         title: "Error",
@@ -56,6 +58,11 @@ const ShareLocationCard: React.FC = () => {
   const hasSharedLocation = React.useMemo(() => {
     return user ? pins.some(pin => pin.userId === user.id) : false;
   }, [pins, user]);
+
+  // Only render if user exists
+  if (!user) {
+    return null;
+  }
 
   return (
     <Card className="border-0 shadow-md mb-6">

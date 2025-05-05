@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -91,7 +90,7 @@ const ClientDashboard = () => {
                 </div>
                 <div>
                   <h3 className="font-medium text-navy">Mobile Clinic Today</h3>
-                  <p className="text-sm text-gray-600">Downtown from 10am-2pm</p>
+                  <p className="text-sm text-gray-600">Old Town Station from 10am-2pm</p>
                 </div>
               </div>
               
@@ -101,7 +100,7 @@ const ClientDashboard = () => {
                 </div>
                 <div>
                   <h3 className="font-medium text-navy">Weather Alert</h3>
-                  <p className="text-sm text-gray-600">Rain tonight. Extra shelter beds available.</p>
+                  <p className="text-sm text-gray-600">Rain tonight. Extra beds at Imperial Street Shelter.</p>
                 </div>
               </div>
               
@@ -128,10 +127,12 @@ const ClientDashboard = () => {
                 <div className="mr-4 bg-purple/20 p-2 rounded text-purple">
                   <Calendar size={20} />
                 </div>
-                <div>
-                  <h3 className="font-medium text-navy">Case Manager Meeting</h3>
-                  <p className="text-sm text-gray-500">Tomorrow at 2:00 PM</p>
-                  <p className="text-sm text-gray-600">Main Center</p>
+                <div className="flex-1">
+                  <div className="flex justify-between">
+                    <h3 className="font-medium text-navy">Case Manager Meeting</h3>
+                    <span className="text-sm text-gray-500">Tomorrow at 2:00 PM</span>
+                  </div>
+                  <p className="text-sm text-gray-600">Central Library, 2nd Floor</p>
                 </div>
               </div>
               
