@@ -1,15 +1,18 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Phone, MessageSquare, Clock } from "lucide-react";
-import { useLocation, LocationPin } from "@/contexts/LocationContext";
-import { formatCoordinates } from "@/utils/mapUtils";
+import { MapPin, MessageSquare, Clock } from "lucide-react";
+import { useLocation } from "@/contexts/LocationContext";
 import { Link } from "react-router-dom";
 
 interface LocationDetailProps {
   pinId?: string;
 }
+
+// Function to format coordinates to a readable string
+const formatCoordinates = (latitude: number, longitude: number): string => {
+  return `${latitude.toFixed(4)}° N, ${longitude.toFixed(4)}° W`;
+};
 
 const LocationDetail: React.FC<LocationDetailProps> = ({ pinId }) => {
   const { pins, selectedPinId } = useLocation();

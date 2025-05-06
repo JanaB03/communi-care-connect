@@ -1,5 +1,3 @@
-// Fixed ShareLocationCard that safely uses useUser
-
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +5,22 @@ import { MapPin } from "lucide-react";
 import { useLocation } from "@/contexts/LocationContext";
 import { useUser } from "@/contexts/UserContext";
 import { useToast } from "@/hooks/use-toast";
-import { getCurrentLocation } from "@/utils/mapUtils";
+
+// Helper function to get current location
+const getCurrentLocation = (): Promise<GeolocationPosition> => {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error("Geolocation is not supported by your browser"));
+      return;
+    }
+    
+    navigator.geolocation.getCurrentPosition(resolve, reject, {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0
+    });
+  });
+};
 
 const ShareLocationCard: React.FC = () => {
   const { addPin, pins } = useLocation();
@@ -35,7 +48,9 @@ const ShareLocationCard: React.FC = () => {
         userId: user.id,
         userName: user.name,
         latitude: position.coords.latitude,
-        longitude: position.coords.longitude
+        longitude: position.coords.longitude,
+        address: "My Current Location",
+        pinType: "current"
       });
       
       toast({

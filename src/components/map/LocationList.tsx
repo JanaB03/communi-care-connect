@@ -1,10 +1,10 @@
-
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, MapPin, Phone, Clock, Info } from "lucide-react";
-import { useLocation, LocationPin } from "@/contexts/LocationContext";
+import { Search, MapPin, Clock, Info } from "lucide-react";
+import { useLocation } from "@/contexts/LocationContext";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatCoordinates } from "@/utils/mapUtils";
 
 interface LocationListProps {
@@ -17,27 +17,37 @@ const LocationList: React.FC<LocationListProps> = ({
   filterByType = true
 }) => {
   const { pins, selectedPinId, setSelectedPinId } = useLocation();
-  const [searchQuery, setSearchQuery] = React.useState("");
-  const [locationType, setLocationType] = React.useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [locationType, setLocationType] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState("all"); // "all", "current", "future"
   
   // Mock service location types for filtering
   const locationTypes = ["Shelter", "Medical", "Food", "Support Services"];
   
-  // Filter pins based on search query and selected type
+  // Filter pins based on search query, selected type, and view mode
   const filteredPins = React.useMemo(() => {
     return pins.filter(pin => {
+      // Filter by search query
       const matchesSearch = searchQuery
         ? pin.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
           (pin.address && pin.address.toLowerCase().includes(searchQuery.toLowerCase()))
         : true;
         
+      // Filter by location type
       const matchesType = locationType
         ? pin.address && pin.address.toLowerCase().includes(locationType.toLowerCase())
         : true;
+      
+      // Filter by pin type (current/future)
+      const matchesPinType = viewMode === "all" 
+        ? true 
+        : viewMode === "current" 
+          ? pin.pinType !== "future"
+          : pin.pinType === "future";
         
-      return matchesSearch && matchesType;
+      return matchesSearch && matchesType && matchesPinType;
     });
-  }, [pins, searchQuery, locationType]);
+  }, [pins, searchQuery, locationType, viewMode]);
   
   // Handle location selection
   const handleSelectLocation = (pinId: string) => {
@@ -90,6 +100,14 @@ const LocationList: React.FC<LocationListProps> = ({
           ))}
         </div>
       )}
+      
+      <Tabs defaultValue="all" className="w-full" onValueChange={setViewMode}>
+        <TabsList className="grid grid-cols-3 w-full">
+          <TabsTrigger value="all">All</TabsTrigger>
+          <TabsTrigger value="current">Current</TabsTrigger>
+          <TabsTrigger value="future">Planned</TabsTrigger>
+        </TabsList>
+      </Tabs>
       
       <div className="overflow-y-auto flex-1 -mr-2 pr-2">
         {filteredPins.length > 0 ? (

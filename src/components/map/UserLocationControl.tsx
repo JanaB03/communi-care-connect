@@ -1,115 +1,142 @@
-import React from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { MapPin, Trash, Clock, ExternalLink } from "lucide-react";
-import { useLocation, LocationPin } from "@/contexts/LocationContext";
-import { formatCoordinates } from "@/utils/mapUtils";
+import { MapPin, Loader2, AlertTriangle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/contexts/UserContext";
-import { 
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger
-} from "@/components/ui/alert-dialog";
+import { useLocation } from "@/contexts/LocationContext";
+import { useNavigate } from "react-router-dom";
 
-const UserLocationControl = () => {
+interface UserLocationControlProps {
+  mapRef?: React.RefObject<mapboxgl.Map>;
+  className?: string;
+}
+
+const UserLocationControl: React.FC<UserLocationControlProps> = ({ 
+  mapRef, 
+  className 
+}) => {
   const { user } = useUser();
-  const { pins, deletePin, getUserPins } = useLocation();
-  
-  if (!user) return null;
-  
-  // Get the user's current pin
-  const userPins = getUserPins(user.id);
-  const userPin = userPins.length > 0 ? userPins[0] : null;
-  
-  if (!userPin) {
-    return (
-      <Card className="border shadow-md mb-6">
-        <CardContent className="p-4 text-center">
-          <p className="text-gray-600 mb-2">You haven't shared your location yet</p>
-          <p className="text-sm text-gray-500">
-            Click on the map to drop a pin and share your location with the case management team.
-          </p>
-        </CardContent>
-      </Card>
+  const { addPin } = useLocation();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Function to get user's current location
+  const getCurrentLocation = () => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to share your location.",
+        variant: "destructive"
+      });
+      navigate("/login");
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    if (!navigator.geolocation) {
+      setError("Geolocation is not supported by your browser");
+      setIsLoading(false);
+      toast({
+        title: "Location Error",
+        description: "Geolocation is not supported by your browser.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        
+        // Add a pin to the location context
+        addPin({
+          userId: user.id,
+          userName: user.name,
+          latitude,
+          longitude,
+          address: "My Current Location",
+          pinType: "current"
+        });
+
+        // Show success message
+        toast({
+          title: "Location shared",
+          description: "Your location has been successfully shared.",
+        });
+
+        // Fly to location if map is available
+        if (mapRef && mapRef.current) {
+          mapRef.current.flyTo({
+            center: [longitude, latitude],
+            zoom: 15,
+            essential: true
+          });
+        }
+
+        setIsLoading(false);
+      },
+      (error) => {
+        let errorMessage: string;
+        
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = "Location permission denied. Please enable location services in your browser settings.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = "Location information is unavailable.";
+            break;
+          case error.TIMEOUT:
+            errorMessage = "The request to get your location timed out.";
+            break;
+          default:
+            errorMessage = "An unknown error occurred while trying to get your location.";
+            break;
+        }
+        
+        setError(errorMessage);
+        setIsLoading(false);
+        
+        toast({
+          title: "Location Error",
+          description: errorMessage,
+          variant: "destructive"
+        });
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
     );
-  }
-  
-  // Format the timestamp
-  const formatTime = (date: Date) => {
-    return new Intl.DateTimeFormat('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: 'numeric'
-    }).format(date);
-  };
-  
-  // Get Google Maps directions URL
-  const getDirectionsUrl = (lat: number, lng: number) => {
-    return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
   };
 
   return (
-    <Card className="border-0 shadow-md mb-6">
-      <CardHeader className="bg-blue-50 pb-3">
-        <CardTitle className="text-lg">Your Shared Location</CardTitle>
-      </CardHeader>
-      <CardContent className="p-4 space-y-3">
-        <div className="flex items-center text-sm">
-          <MapPin className="h-4 w-4 mr-2 text-purple" />
-          <span>{userPin.address || "Custom location"}</span>
+    <div className={`absolute ${className || "bottom-5 right-5"} z-10`}>
+      {error && (
+        <div className="mb-2 p-2 bg-red-50 border border-red-200 rounded-md flex items-center text-xs text-red-700">
+          <AlertTriangle className="w-4 h-4 mr-1 flex-shrink-0" />
+          <span>{error}</span>
         </div>
-        <div className="flex items-center text-sm">
-          <Clock className="h-4 w-4 mr-2 text-orange" />
-          <span>Shared on {formatTime(userPin.timestamp)}</span>
-        </div>
-        <div className="text-xs text-gray-500">
-          {formatCoordinates(userPin.latitude, userPin.longitude)}
-        </div>
-      </CardContent>
-      <CardFooter className="flex justify-between bg-gray-50 py-3">
-        <a 
-          href={getDirectionsUrl(userPin.latitude, userPin.longitude)} 
-          target="_blank" 
-          rel="noopener noreferrer"
-        >
-          <Button variant="outline" size="sm">
-            <MapPin className="h-4 w-4 mr-1" /> Get Directions
-          </Button>
-        </a>
-        
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button variant="outline" size="sm" className="text-red-500">
-              <Trash className="h-4 w-4 mr-1" /> Remove
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Remove Shared Location?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This will remove your location pin from the map. Your care team will no longer be able to see your location.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction 
-                onClick={() => deletePin(userPin.id)}
-                className="bg-red-500 hover:bg-red-600"
-              >
-                Remove
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </CardFooter>
-    </Card>
+      )}
+      
+      <Button
+        onClick={getCurrentLocation}
+        disabled={isLoading}
+        className="bg-white text-purple hover:bg-purple/10 border border-gray-300 shadow-md"
+      >
+        {isLoading ? (
+          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+        ) : (
+          <MapPin className="w-4 h-4 mr-2" />
+        )}
+        {isLoading ? "Locating..." : "Share My Location"}
+      </Button>
+    </div>
   );
 };
 
