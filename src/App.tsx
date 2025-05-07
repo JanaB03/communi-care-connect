@@ -19,6 +19,7 @@ import Map from "./pages/Map";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import AuthLayout from "./layouts/AuthLayout";
+import MapTest from "./pages/MapTest";
 
 const queryClient = new QueryClient();
 
@@ -35,12 +36,14 @@ const App = () => (
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
                 <Route element={<AuthLayout />}>
+                <Route path="/map-test" element={<MapTest />} />
                   <Route path="/client" element={<ClientDashboard />} />
                   <Route path="/staff" element={<StaffDashboard />} />
                   <Route path="/chat" element={<Chat />} />
                   <Route path="/resources" element={<Resources />} />
                   <Route path="/map" element={<Map />} />
                   <Route path="/settings" element={<Settings />} />
+                  <Route path="/map-test" element={<MapTest />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>
